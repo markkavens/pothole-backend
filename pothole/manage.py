@@ -1,7 +1,9 @@
 from flask import *
 import sqlite3 , requests, hashlib
 
+import os
 app = Flask(__name__)
+app.secret_key=os.urandom(24)
 
 DATABASE = './potholedb.db'
 
@@ -131,15 +133,16 @@ def getcomplaints():
 def login():
     if request.method == 'POST' :
         username=request.form['username']
+        print(username)
         password=request.form['password']
         h=hashlib.md5(password.encode())
         cur=get_db().cursor()
-        cur.execute("SELECT * FROM employees WHERE mobile_no="+username)
+        cur.execute("SELECT * FROM employees WHERE mobile_no="+str(username))
         rows=cur.fetchall()
         print(rows)
         if len(rows)>0 :
             if(rows[0]['password'] == h.hexdigest()):
-                session['username']=rows[0]['name']
+                session['username']=rows[0]['officer_name']
                 session['officer_id']=rows[0]['officer_id']
                 session['office_id']=rows[0]['office_id']
                 session['points']=rows[0]['points']
@@ -156,29 +159,53 @@ def login():
 
 @app.route('/pending',methods=['GET','POST'])
 def pending():
+    #session checking
+    if(session['username'] == None):
+    
+        return redirect('\login')
+    office_id = session['office_id'] 
+    cur = get_db().cursor()
+    cur.execute("select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
+    rows = cur.fetchall()
+    if len(rows) > 0 :
+        complaint_list = []
+        for row in rows:
+            nearest = row['nearest5']
+            ids = nearest.split(",")
+            print(ids)
+            if str(office_id) in ids:
+                complaint_list.append(row['complaint_id'])
+
+        print(complaint_list)
+        cur.execute("select * from complaints where complaint_id in "+str((tuple(complaint_list))))
+        rows_p = cur.fetchall()
+        return jsonify(rows_p)
+
+    return "NO COMPLAINTS" ## to do render_template
+
+
+################################################ owned complaints###########################################
+@app.route('/owned',methods=['GET','POST'])
+def owned():
 	#session checking
-	office_id = 2 # to be set
-	cur = get_db().cursor()
-	cur.execute("select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
-	rows = cur.fetchall()
-	if rows is not None:
-		complaint_list = []
-		for row in rows:
-			nearest = row['nearest5']
-			ids = nearest.split(",")
-			print(ids)
-			if str(office_id) in ids:
-				complaint_list.append(row['complaint_id'])
+    if(len(session) == 0):
+        return redirect('\login')
+    office_id = session['office_id']
+    print(office_id)
+    cur = get_db().cursor()
+    cur.execute("select * from complaints WHERE owner_id = "+str(office_id))
+    rows = cur.fetchall()
+    if(len(rows)>0):
+        return jsonify(rows)
 
-		print(complaint_list)
-		cur.execute("select * from complaints where complaint_id in "+str((tuple(complaint_list))))
-		rows_p = cur.fetchall()
-		return jsonify(rows_p)
+    return "NO COMPLAINTS" ## to do render_template
 
-	return "NO COMPLAINTS" ## to do render_template
+
+ 
 
 
 
 if __name__ =='__main__':  
+    
     app.run(host="0.0.0.0", debug = True)  
 
