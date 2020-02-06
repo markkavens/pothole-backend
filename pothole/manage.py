@@ -1,5 +1,5 @@
-from flask import Flask, redirect, url_for ,g , jsonify
-import sqlite3 , requests
+from flask import *
+import sqlite3 , requests,math
 
 app = Flask(__name__)
 
@@ -11,6 +11,11 @@ def get_db():
         db = g._database = sqlite3.connect(DATABASE)
         db.row_factory = make_dicts  # make dictionary of rows
     return db
+def distance(lat1,lat2,lon1,lon2):
+    r = 6378100
+    #d=2*r*math.asin((math.sqrt(math.sin((lat2-lat1)/2)))**2 + math.cos(lat1)*math.cos(lat2)*(math.sin((lon2-lon1)/2))**2)
+    return 0
+
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -25,14 +30,12 @@ def make_dicts(cursor, row):
 	
 @app.route('/')    
 def home():  
-	return redirect(url_for('getcomplaints'))
+	return "redirect(url_for('getcomplaints'))"
 
 @app.route('/post-complaints',methods=['POST'])
 def postcomplaints():
     #token = request.form['userid']
     # if(token is not none):
-
-    # duplication checking <..TODO >
     
     #values from app_interface
     data = request.get_json()  # get json from them
@@ -40,8 +43,43 @@ def postcomplaints():
     latitude = data['latitude']
     longitude = data['longitude']
     image_name = data['image_name']
-    address = data['address']
-    landmark = data['landmark'] 
+    #address = data['address']
+    #landmark = data['landmark'] 
+
+    # duplication checking
+    cur = get_db().cursor()
+    cur.execute("select complaint_id,complaint_latitude,complaint_longitude from complaints")
+    rows = cur.fetchall()
+    limit = 5
+    if rows is not []:
+        for row in rows:
+            lat2 = row['complaint_latitude']
+            lon2 = row['complaint_longitude']
+            d = distance(latitude,lat2,longitude,lon2)
+            if d <= limit:
+                cur.execute("UPDATE complaints SET upvotes=upvotes+1 where complaint_id=?",str(row['complaint_id']))
+                get_db().commit()
+                return "status 0"
+
+    # nearest 5 findings
+    nearest = {}
+    nearestlist = []
+    cur.execute("select * from offices")
+    rows_offices = cur.fetchall()
+    for row_office in rows_offices:
+        lat_o = row_office['office_latitude']
+        lon_o = row_office['office_longitude']
+        d = distance(latitude,lat_o,longitude,lon_o)
+        nearest[row['office_id']] = d
+    sorted_d = sorted((value, key) for (key,value) in nearest.items())
+    print(sorted_d)
+    i=0
+    while i<len(sorted_d) and i<5:
+        nearestlist.append(sorted_d[i][1])
+
+    nearest5="-".join(nearestlist)
+    print(nearest5)
+
 
     #getting traffic level of complaint point
 
@@ -60,10 +98,9 @@ def postcomplaints():
     traffic_value=free_flow_speed - current_speed  + (free_flow_travel_time - current_travel_time)/free_flow_travel_time
 
 
-    cur = get_db().cursor()
-    cur.execute('''INSERT into complaints (complaint_id,complaint_category,
-				complaint_latitude,complaint_longitude,image_name) VALUES
-				(:id,:cat,:lat,:long,:img)''',{"id":1,"cat":category,"lat":latitude,"long":longitude,"img":image_name})
+    cur.execute('''INSERT into complaints (complaint_category,complaint_latitude,
+                    complaint_longitude,image_name) VALUES
+				    (:cat,:lat,:long,:img)''',{"cat":category,"lat":latitude,"long":longitude,"img":image_name})
     for row in cur.execute('SELECT * FROM complaints'):
         print(row)
     get_db().commit()
