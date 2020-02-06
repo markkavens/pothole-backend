@@ -43,9 +43,11 @@ def postcomplaints():
 	cur.execute('''INSERT into complaints (complaint_id,complaint_category,
 				complaint_latitude,complaint_longitude,image_name) VALUES
 				(:id,:cat,:lat,:long,:img)''',{"id":1,"cat":category,"lat":latitude,"long":longitude,"img":image_name})
-
-	return 'asd'
-
+	
+	for row in cur.execute('SELECT * FROM complaints'):
+		print(row)
+	get_db().commit()
+	return "sone"
 
 
 @app.route('/get-complaints',methods=['GET','POST'])
