@@ -1,0 +1,31 @@
+.login-card {
+	margin: auto;
+	width: max-content;
+	padding: 48px 40px 30px;
+	border-radius: 10px;
+	text-align: center;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 400px;
+	max-width: 95%;
+}
+
+.login-card > h2 {
+	margin: 0px auto 8px;
+	font-size: 2em;
+}
+
+@media screen and (max-width: 500px) {
+	.login-card {
+		box-shadow: none;
+		padding: 48px 24px 30px;
+	}
+	button[type='submit'] {
+		-webkit-box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12),
+			0 1px 5px 0 rgba(0, 0, 0, 0.2) !important;
+		box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12),
+			0 1px 5px 0 rgba(0, 0, 0, 0.2) !important;
+	}
+}

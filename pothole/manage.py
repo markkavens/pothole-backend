@@ -1,5 +1,6 @@
-from flask import Flask, redirect, url_for ,g , jsonify, render_template
-import sqlite3 , requests
+
+from flask import *
+import sqlite3 , requests, hashlib
 
 app = Flask(__name__)
 
@@ -46,10 +47,10 @@ def postcomplaints():
     image_name = data['image_name']
     address = data['address']
     landmark = data['landmark'] 
-
     #getting traffic level of complaint point
 
     api_key="jqaiP21S534IESqdD667p0Aiheea7gpt"
+    # Just testing out
 
     URL="https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?point="+str(latitude)+"%2C"+str(longitude)+"&key="+api_key
     r=requests.get(url=URL)
@@ -77,16 +78,45 @@ def postcomplaints():
 
 @app.route('/get-complaints',methods=['GET','POST'])
 def getcomplaints():
-	#token = request.form['userid']
-	#if(token is not none):
-	# get from db
-	cur = get_db().cursor()
-	cur.execute("select * from complaints")
-	rows = cur.fetchall()
-	if rows is not None:
-		rows.insert(0,{'status':1})	
-		response = jsonify(rows)
-	return 	response
+
+    #token = request.form['userid']
+    # if(token is not none):
+    # get from db
+    cur = get_db().cursor()
+    cur.execute("select * from complaints")
+    rows = cur.fetchall()
+    if len(rows)>0 :
+        rows.insert(0, {'status': 1})
+        response = jsonify(rows)
+    return response
+
+########################################################################login###############################################
+@app.route('/login',methods=['GET','POST'])
+def login():
+    if request.method == 'POST' :
+        username=request.form['username']
+        password=request.form['password']
+        h=hashlib.md5(password.encode())
+        cur=get_db().cursor()
+        cur.execute("SELECT * FROM employees WHERE mobile_no="+username)
+        rows=cur.fetchall()
+        print(rows)
+        if len(rows)>0 :
+            if(rows[0]['password'] == h.hexdigest()):
+                session['username']=rows[0]['name']
+                session['officer_id']=rows[0]['officer_id']
+                session['office_id']=rows[0]['office_id']
+                session['points']=rows[0]['points']
+                session['leaderboar_rank']=rows[0]['leaderboard_rank']    
+                return   redirect('/pending')
+            else:
+                return render_template('login.html', login_status=0)
+        else:
+            return render_template('login.html', login_status=2)
+    else:
+        return render_template('login.html')
+
+
 
 @app.route('/pending',methods=['GET','POST'])
 def pending():
