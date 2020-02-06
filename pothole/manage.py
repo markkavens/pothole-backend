@@ -5,7 +5,7 @@ import hashlib
 
 import os
 app = Flask(__name__)
-app.secret_key=os.urandom(24)
+app.secret_key = os.urandom(24)
 
 DATABASE = './potholedb.db'
 
@@ -49,13 +49,14 @@ def registerUser():
 				    (:cat,:lat,:long,:img)''',
                 {"cat": '', "lat": latitude,
                     "long": longitude, "img": image_name
-                    }
+                 }
                 )
 
 
 @app.route('/admin-interface')
 def adminInterface():
-    return render_template('admin.html')
+    print(session)
+    return render_template('admin.html', username =  session['username'])
 
 
 @app.route('/post-complaints', methods=['POST'])
@@ -153,23 +154,23 @@ def getcomplaints():
 ########################################################################login###############################################
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST' :
-        username=request.form['username']
+    if request.method == 'POST':
+        username = request.form['username']
         print(username)
-        password=request.form['password']
-        h=hashlib.md5(password.encode())
-        cur=get_db().cursor()
+        password = request.form['password']
+        h = hashlib.md5(password.encode())
+        cur = get_db().cursor()
         cur.execute("SELECT * FROM employees WHERE mobile_no="+str(username))
-        rows=cur.fetchall()
+        rows = cur.fetchall()
         print(rows)
         if len(rows) > 0:
             if(rows[0]['password'] == h.hexdigest()):
-                session['username']=rows[0]['officer_name']
-                session['officer_id']=rows[0]['officer_id']
-                session['office_id']=rows[0]['office_id']
-                session['points']=rows[0]['points']
-                session['leaderboar_rank']=rows[0]['leaderboard_rank']    
-                return   redirect('/pending')
+                session['username'] = rows[0]['officer_name']
+                session['officer_id'] = rows[0]['officer_id']
+                session['office_id'] = rows[0]['office_id']
+                session['points'] = rows[0]['points']
+                session['leaderboar_rank'] = rows[0]['leaderboard_rank']
+                return redirect('/pending')
             else:
                 return render_template('login.html', login_status=0)
         else:
@@ -177,24 +178,29 @@ def login():
     else:
         return render_template('login.html')
 
+
 @app.route('/logout')
 def logout():
-    for i in range(len(sessions)):
+    for i in range(len(session)):
         session.pop()
-        
+
     return redirect('/')
+
+
 
 @app.route('/pending', methods=['GET', 'POST'])
 def pending():
-    #session checking
+    # session checking
+        
     if(session['username'] == None):
-    
+
         return redirect('\login')
-    office_id = session['office_id'] 
+    office_id = session['office_id']
     cur = get_db().cursor()
-    cur.execute("select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
+    cur.execute(
+        "select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
     rows = cur.fetchall()
-    if len(rows) > 0 :
+    if len(rows) > 0:
         complaint_list = []
         for row in rows:
             nearest = row['nearest5']
@@ -204,17 +210,18 @@ def pending():
                 complaint_list.append(row['complaint_id'])
 
         print(complaint_list)
-        cur.execute("select * from complaints where complaint_id in "+str((tuple(complaint_list))))
+        cur.execute("select * from complaints where complaint_id in " +
+                    str((tuple(complaint_list))))
         rows_p = cur.fetchall()
         return jsonify(rows_p)
 
-    return "NO COMPLAINTS" ## to do render_template
+    return "NO COMPLAINTS"  # to do render_template
 
 
 ################################################ owned complaints###########################################
-@app.route('/owned',methods=['GET','POST'])
+@app.route('/owned', methods=['GET', 'POST'])
 def owned():
-	#session checking
+        # session checking
     if(len(session) == 0):
         return redirect('\login')
     office_id = session['office_id']
@@ -222,19 +229,16 @@ def owned():
     cur = get_db().cursor()
     cur.execute("select * from complaints WHERE owner_id = "+str(office_id))
     rows = cur.fetchall()
-    if(len(rows)>0):
+    if(len(rows) > 0):
         return jsonify(rows)
 
-    return "NO COMPLAINTS" ## to do render_template
+    return "NO COMPLAINTS"  # to do render_template
 
-
- 
-
-        print(complaint_list)
-        cur.execute("select * from complaints where complaint_id in " +
-                    str((tuple(complaint_list))))
-        rows_p = cur.fetchall()
-        return jsonify(rows_p)
+    print(complaint_list)
+    cur.execute("select * from complaints where complaint_id in " +
+                str((tuple(complaint_list))))
+    rows_p = cur.fetchall()
+    return jsonify(rows_p)
 
     return "NO COMPLAINTS"  # to do render_template
 
