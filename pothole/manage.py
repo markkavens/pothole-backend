@@ -29,7 +29,7 @@ def home():
 
 @app.route('/admin-interface')
 def adminInterface():
-    return 'Hto'
+    return render_template('admin.html')
 
 @app.route('/post-complaints',methods=['POST'])
 def postcomplaints():
@@ -114,5 +114,5 @@ def pending():
 
 
 if __name__ =='__main__':  
-    app.run(debug = True)  
+    app.run(host="0.0.0.0", debug = True)  
 
