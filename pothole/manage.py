@@ -3,7 +3,7 @@ import sqlite3
 from flask_mysqldb import MySQL
 app = Flask(__name__)  
 
-DATABASE = '/home/mark/Desktop/pothole/potholedb.db'
+DATABASE = './potholedb.db'
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -25,7 +25,7 @@ def make_dicts(cursor, row):
 	
 @app.route('/')    
 def home():  
-	return redirect(url_for('postcomplaints'))
+	return redirect(url_for('getcomplaints'))
 
 @app.route('/post-complaints',methods=['POST'])
 def postcomplaints():
@@ -64,3 +64,4 @@ def getcomplaints():
 
 if __name__ =='__main__':  
     app.run(debug = True)  
+
