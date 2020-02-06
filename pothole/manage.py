@@ -46,10 +46,10 @@ def postcomplaints():
     image_name = data['image_name']
     address = data['address']
     landmark = data['landmark'] 
-
     #getting traffic level of complaint point
 
     api_key="jqaiP21S534IESqdD667p0Aiheea7gpt"
+    # Just testing out
 
     URL="https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?point="+str(latitude)+"%2C"+str(longitude)+"&key="+api_key
     r=requests.get(url=URL)
