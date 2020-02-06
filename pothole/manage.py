@@ -1,7 +1,7 @@
-from flask import *	  
-import sqlite3	
-from flask_mysqldb import MySQL
-app = Flask(__name__)  
+from flask import Flask, redirect, url_for ,g , jsonify
+import sqlite3 , requests
+
+app = Flask(__name__)
 
 DATABASE = './potholedb.db'
 
@@ -29,25 +29,46 @@ def home():
 
 @app.route('/post-complaints',methods=['POST'])
 def postcomplaints():
-	#token = request.form['userid']
-	#if(token is not none):
+    #token = request.form['userid']
+    # if(token is not none):
 
-	#duplication checking <..TODO >
+    # duplication checking <..TODO >
+    
+    #values from app_interface
+    data = request.get_json()  # get json from them
+    category = data['category']
+    latitude = data['latitude']
+    longitude = data['longitude']
+    image_name = data['image_name']
+    address = data['address']
+    landmark = data['landmark'] 
 
-	data = request.get_json();  # get json from them
-	category = data['category']
-	latitude = data['latitude']
-	longitude = data['longitude']
-	image_name = data['image_name']
-	cur = get_db().cursor()
-	cur.execute('''INSERT into complaints (complaint_id,complaint_category,
+    #getting traffic level of complaint point
+
+    api_key="jqaiP21S534IESqdD667p0Aiheea7gpt"
+
+    URL="https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?point="+str(latitude)+"%2C"+str(longitude)+"&key="+api_key
+    r=requests.get(url=URL)
+
+    traffic_data=r.json()
+
+    free_flow_speed=traffic_data['flowSegmentData']['freeFlowSpeed']   
+    current_speed=traffic_data['flowSegmentData']['currentSpeed']
+    free_flow_travel_time=traffic_data['flowSegmentData']['freeFlowTravelTime']
+    current_travel_time=traffic_data['flowSegmentData']['currentTravelTime']
+
+    traffic_value=free_flow_speed - current_speed  + (free_flow_travel_time - current_travel_time)/free_flow_travel_time
+
+
+    cur = get_db().cursor()
+    cur.execute('''INSERT into complaints (complaint_id,complaint_category,
 				complaint_latitude,complaint_longitude,image_name) VALUES
 				(:id,:cat,:lat,:long,:img)''',{"id":1,"cat":category,"lat":latitude,"long":longitude,"img":image_name})
-	
-	for row in cur.execute('SELECT * FROM complaints'):
-		print(row)
-	get_db().commit()
-	return "sone"
+    for row in cur.execute('SELECT * FROM complaints'):
+        print(row)
+    get_db().commit()
+    return "sone"
+
 
 
 @app.route('/get-complaints',methods=['GET','POST'])
