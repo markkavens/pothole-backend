@@ -1,9 +1,10 @@
-from flask import *	  
-import sqlite3	
+from flask import *
+import sqlite3
 from flask_mysqldb import MySQL
-app = Flask(__name__)  
+app = Flask(__name__)
 
 DATABASE = './potholedb.db'
+
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -12,22 +13,25 @@ def get_db():
         db.row_factory = make_dicts  # make dictionary of rows
     return db
 
+
 @app.teardown_appcontext
 def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
 
+
 def make_dicts(cursor, row):
     return dict((cursor.description[idx][0], value)
-    		for idx, value in enumerate(row))
+                for idx, value in enumerate(row))
 
-	
-@app.route('/')    
-def home():  
-	return redirect(url_for('getcomplaints'))
 
-@app.route('/post-complaints',methods=['POST'])
+@app.route('/')
+def home():
+    return redirect(url_for('getcomplaints'))
+
+
+@app.route('/post-complaints', methods=['POST'])
 def postcomplaints():
 	#token = request.form['userid']
 	#if(token is not none):
@@ -47,23 +51,23 @@ def postcomplaints():
 	for row in cur.execute('SELECT * FROM complaints'):
 		print(row)
 	get_db().commit()
-	return "sone"
+	return "something"
 
 
-@app.route('/get-complaints',methods=['GET','POST'])
+
+@app.route('/get-complaints', methods=['GET', 'POST'])
 def getcomplaints():
-	#token = request.form['userid']
-	#if(token is not none):
-	# get from db
-	cur = get_db().cursor()
-	cur.execute("select * from complaints")
-	rows = cur.fetchall()
-	if rows is not None:
-		rows.insert(0,{'status':1})	
-		response = jsonify(rows)
-	return 	response
+    #token = request.form['userid']
+    # if(token is not none):
+    # get from db
+    cur = get_db().cursor()
+    cur.execute("select * from complaints")
+    rows = cur.fetchall()
+    if rows is not None:
+        rows.insert(0, {'status': 1})
+        response = jsonify(rows)
+    return response
 
 
-if __name__ =='__main__':  
-    app.run(debug = True)  
-
+if __name__ == '__main__':
+    app.run(debug=True)
