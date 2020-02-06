@@ -1,5 +1,5 @@
-from flask import Flask, redirect, url_for ,g , jsonify
-import sqlite3 , requests
+from flask import *
+import sqlite3 , requests, hashlib
 # from flask_mysqldb import MySQL
 app = Flask(__name__)
 
@@ -80,10 +80,40 @@ def getcomplaints():
     cur = get_db().cursor()
     cur.execute("select * from complaints")
     rows = cur.fetchall()
-    if rows is not None:
+    if len(rows)>0 :
         rows.insert(0, {'status': 1})
         response = jsonify(rows)
     return response
+
+########################################################################login###############################################
+@app.route('/login',methods=['GET','POST'])
+def login():
+    if request.method == 'POST' :
+        username=request.form['username']
+        password=request.form['password']
+        h=hashlib.md5(password.encode())
+        cur=get_db().cursor()
+        cur.execute("SELECT * FROM employees WHERE mobile_no="+username)
+        rows=cur.fetchall()
+        print(rows)
+        if len(rows)>0 :
+            if(rows[0]['password'] == h.hexdigest()):
+                session['username']=rows[0]['name']
+                session['officer_id']=rows[0]['officer_id']
+                session['office_id']=rows[0]['office_id']
+                session['points']=rows[0]['points']
+                session['leaderboar_rank']=rows[0]['leaderboard_rank']    
+                return   redirect('/pending')
+            else:
+                return render_template('login.html', login_status=0)
+        else:
+            return render_template('login.html', login_status=2)
+    else:
+        return render_template('login.html')
+
+
+
+
 
 
 if __name__ == '__main__':
