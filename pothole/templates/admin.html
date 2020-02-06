@@ -1,4 +1,5 @@
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,36 +12,48 @@
 
     <!-- Compiled and minified JavaScript -->
     <style>
-    .pothole-img{
-        width: 350px !important;
-        height: auto !important;
-    }
+        .pothole-img {
+            width: 350px !important;
+            height: auto !important;
+        }
     </style>
 </head>
-<body>
-    <div class="row">
-        <div class="col s12 m6">
-          <div class="card teal lighten-2">
-            <div class="card-content white-text">
-              <span class="card-title">Complaint</span>
-              <div class="card-image">
-                <img class="pothole-img" src="https://media.istockphoto.com/photos/old-highway-with-holes-and-snow-landscape-road-potholes-in-cloudy-picture-id929942316?k=6&m=929942316&s=612x612&w=0&h=FzPRKlHamWbcShYhznEv0Z4iUht4StKkoPRb0hNIFag=">
+
+<body class="grey lighten-4 ">
+    <div>
+        <div class="container">
+            <div class="row">
+                {% for x in range(6)%}
+
+                <div class="col s12 m4">
+                    <div class="card">
+                        <div class="card-content black-text">
+                            <span class="card-title">Complaint</span>
+                            <div class="card-image">
+                                <img class="pothole-img"
+                                    src="https://media.istockphoto.com/photos/old-highway-with-holes-and-snow-landscape-road-potholes-in-cloudy-picture-id929942316?k=6&m=929942316&s=612x612&w=0&h=FzPRKlHamWbcShYhznEv0Z4iUht4StKkoPRb0hNIFag=">
+                            </div>
+                            <p>Date: <br> Category: <br> Location:
+                            </p>
+
+                        </div>
+                        <div class="card-action">
+                            <a class="waves-effect waves-light btn light-blue darken-1" href="#">Show Map</a>
+                            <a class="waves-effect waves-light btn light-blue darken-1" href="#">Accept</a>
+                            <a class="waves-effect waves-light btn light-blue darken-1" href="#">Reject</a>
+                        </div>
+                    </div>
                 </div>
-              <p>Date:    <br>   Category:  <br>        Location:
-              </p>
+
+                {%endfor%}
             </div>
-            <div class="card-action">
-              <a class="waves-effect waves-light btn light-blue darken-1"  href="#">Show Map</a>
-              <a class="waves-effect waves-light btn light-blue darken-1" href="#">Accept</a>
-              <a class="waves-effect waves-light btn" href="#">Reject</a>
-            </div>
-          </div>
         </div>
-      </div>
-                
+    </div>
+
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 <script>
-      M.AutoInit();
+    M.AutoInit();
 </script>
+
 </html>
