@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for ,g , jsonify
+from flask import Flask, redirect, url_for ,g , jsonify, render_template
 import sqlite3 , requests
 
 app = Flask(__name__)
@@ -26,6 +26,10 @@ def make_dicts(cursor, row):
 @app.route('/')    
 def home():  
 	return redirect(url_for('getcomplaints'))
+
+@app.route('/admin-interface')
+def adminInterface():
+    return 'Hto'
 
 @app.route('/post-complaints',methods=['POST'])
 def postcomplaints():
