@@ -12,10 +12,10 @@
 
     <!-- Compiled and minified JavaScript -->
     <style>
-        .pothole-img {
-            width: 300px !important;
-            height: auto !important;
-        }
+    .card-content
+    {
+        padding:5xpx !important;
+    }
     </style>
 </head>
 
@@ -23,14 +23,13 @@
 
     <nav>
         <div class="nav-wrapper deep-purple darken-4">
-            <a href="#" class="brand-logo">PWD Employee</a>
-            <ul id="nav-mobile" class="right hide-on-med-and-down">
-                <li>Welcome {{ username }}</li>
-                <li><a href="/">Home</a></li>
-                <li><a href="/owned">Owned Complaints</a></li>
-                <li><a href="/pending">Pending Complaints</a></li>
-                <li><a href="/logout">Logout</a></li>
-            </ul>
+          <a href="#" class="brand-logo">PWD Employee</a>
+          <ul id="nav-mobile" class="right hide-on-med-and-down">
+            <li>Welcome {{ username }}</li>
+            <li><a href="/owned">Owned Complaints</a></li>
+            <li><a href="/pending">Pending Complaints</a></li>
+            <li><a href="/logout">Logout</a></li>
+          </ul>
         </div>
     </nav>
 
@@ -43,16 +42,18 @@
                 <div class="col s12 m4">
 
                     <div class="card">
-                        <div class="card-content black-text">
+                        <div class="card-content black-text" id="complaint_card" >
                             <div class="card-image">
                                 <img class="pothole-img"
                                     src="https://media.istockphoto.com/photos/old-highway-with-holes-and-snow-landscape-road-potholes-in-cloudy-picture-id929942316?k=6&m=929942316&s=612x612&w=0&h=FzPRKlHamWbcShYhznEv0Z4iUht4StKkoPRb0hNIFag=">
                             </div>
                             <p>Date: {{ x['registration_time'] }}
                                 <br>
-                                Category: {{ x['complaint_category'] }}
-                                <br>
-                                Location: {{ x['complaint_latitude'] , x['complaint_longitude']}}
+                                 Category: {{ x['complaint_category'] }}
+                                 <br>
+                                 Location: {{ x['complaint_latitude'] , x['complaint_longitude']}}
+                                 <br>
+                                 <b>Frequency: {{ x['upvotes'] }}</b>
                             </p>
 
                         </div>
@@ -75,19 +76,21 @@
                         <div class="card-content black-text">
                             <div class="card-image">
                                 <img class="pothole-img"
-                                    src="https://media.istockphoto.com/photos/old-highway-with-holes-and-snow-landscape-road-potholes-in-cloudy-picture-id929942316?k=6&m=929942316&s=612x612&w=0&h=FzPRKlHamWbcShYhznEv0Z4iUht4StKkoPRb0hNIFag=">
+                                    src="https://media.istockphoto.com/photos/old-highway-with-holes-and-snow-landscape-road-potholes-in-cloudy-picture-id929942316?k=6&m=929942316&s=612x612&w=0&h=FzPRKlHamWbcShYhznEv0Z4iUht4StKkoPRb0hNIFag=" >
                             </div>
-                            <p>Date:
+                            <p>Date: {{ x['registration_time'] }}
                                 <br>
-                                Category:
-                                <br>
-                                Location:
+                                 Category: {{ x['complaint_category'] }}
+                                 <br>
+                                 Location: {{ x['complaint_latitude'] , x['complaint_longitude']}}
+                                 <br>
+                                 <b> Frequency:{{ x['upvotes'] }}</b>
                             </p>
 
                         </div>
                         <div class="card-action">
-                            <a class="waves-effect waves-light btn deep-purple darken-4" href="#">Navigate</a>
-                            <a class="waves-effect waves-light btn deep-purple darken-4" href="">Resolve</a>
+                         <!--   <a class="waves-effect waves-light btn deep-purple darken-4" href="#">Navigate</a> -->
+                            <a class="waves-effect waves-light btn deep-purple darken-4" href="{{'/resolve/'~x['complaint_id']|string   }}">Resolve</a>
                             <a class="waves-effect waves-light btn deep-purple darken-4" href="#">Promote</a>
                         </div>
                     </div>
