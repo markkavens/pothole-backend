@@ -38,7 +38,7 @@ def make_dicts(cursor, row):
 
 @app.route('/')
 def home():
-    return redirect(url_for('getcomplaints'))
+    return redirect('/login')
 
 
 @app.route('/register')
@@ -170,7 +170,7 @@ def login():
                 session['office_id'] = rows[0]['office_id']
                 session['points'] = rows[0]['points']
                 session['leaderboar_rank'] = rows[0]['leaderboard_rank']
-                return redirect('/pending')
+                return redirect('/pendingcomps')
             else:
                 return render_template('login.html', login_status=0)
         else:
@@ -187,6 +187,9 @@ def logout():
     return redirect('/')
 
 
+@app.route('/pendingcomps')
+def pendingComps():
+    return render_template("admin.html", isPending=True)
 
 @app.route('/pending', methods=['GET', 'POST'])
 def pending():
@@ -219,6 +222,11 @@ def pending():
 
 
 ################################################ owned complaints###########################################
+
+@app.route('/ownedcomps')
+def ownedComplaints():
+    return render_template("admin.html", isPending=False)
+
 @app.route('/owned', methods=['GET', 'POST'])
 def owned():
         # session checking
