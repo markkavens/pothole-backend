@@ -155,9 +155,11 @@ def getcomplaints():
     if len(rows) > 0:
         rows.insert(0, {'status': 1})
         response = jsonify(rows)
+    else:
+        response = { "status":0 }
     return response
 
-########################################## office side ############################################
+########################### office side #################################
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -201,7 +203,7 @@ def pending():
     '''if session  == {}:
         return redirect(url_for('login'))
     office_id = session['office_id'] '''
-    office_id = 1 ## just for testing
+    office_id = 2 ## just for testing
     cur = get_db().cursor()
     cur.execute(
         "select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
@@ -226,11 +228,6 @@ def pending():
     return "NO COMPLAINTS"  # to do render_template
 
 
-################################################ owned complaints###########################################
-
-@app.route('/ownedcomps')
-def ownedComplaints():
-    return render_template("admin.html", isPending=False)
 
 @app.route('/owned', methods=['GET', 'POST'])
 def owned():
