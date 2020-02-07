@@ -165,8 +165,8 @@ def postcomplaints():
                     image_name,traffic_value,registration_time) VALUES(:cat,:lat,:long,:img,:tv,:rtime)''',
                     {"cat": category, "lat": latitude, "long": longitude, "img": image_name,"tv":traffic_value,"rtime":reg_time})
     get_db().commit()
-    for row in cur.execute('SELECT * FROM complaints'):
-        print(row)
+    # for row in cur.execute('SELECT * FROM complaints'):
+    #     print(row)
     
     return jsonify({"status":1})
 
