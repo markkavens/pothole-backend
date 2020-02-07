@@ -30,6 +30,7 @@ def get_db():
 ### to be checked..
 def distance(lat1, lat2, lon1, lon2):
     r = 6378100
+    print(type(lat1))
     lat1=lat1*(math.pi/180)
     lat2=lat2*(math.pi/180)
     lon1=lon1*(math.pi/180)
@@ -87,16 +88,21 @@ def postcomplaints():
     # values from app_interface
     data = request.get_json()  # get json from them
     category = data['category']
-    latitude = data['latitude']
-    longitude = data['longitude']
+    latitude = float(data['latitude'])
+    longitude = float(data['longitude'])
     reg_time =  datetime.datetime.now()
     image_name = str(reg_time).replace(" ","")
     
     imgdata = base64.b64decode(data['base64img'])
-    filename = 'uploaded.jpeg'  
-    with open(filename, 'wb') as f:
+    filename = "./static/uploaded/"+ image_name + '.jpeg'  
+    # filename = "uploaded/hiya"
+    image_name+='.jpeg'
+    #f = open(filename, "wb")
+    #f.close()
+    
+    with open(filename, 'wb+') as f:
         f.write(imgdata)
-
+    f.close()
     print(latitude, longitude)
     
     
@@ -139,8 +145,8 @@ def postcomplaints():
     print(sorted_d)
     i = 0
     while i < len(sorted_d) and i < 5:
-        nearestlist.append(sorted_d[i][1])
-
+        nearestlist.append(str(sorted_d[i][1]))
+        i+=1
     nearest5 = ",".join(nearestlist)
     print(nearest5)
 
@@ -163,8 +169,8 @@ def postcomplaints():
     
     # database posting
     cur.execute('''INSERT into complaints (complaint_category,complaint_latitude,complaint_longitude,
-                    image_name,traffic_value,registration_time) VALUES(:cat,:lat,:long,:img,:tv,:rtime)''',
-                    {"cat": category, "lat": latitude, "long": longitude, "img": image_name,"tv":traffic_value,"rtime":reg_time})
+                    image_name,traffic_value,registration_time,nearest5) VALUES(:cat,:lat,:long,:img,:tv,:rtime,:near)''',
+                    {"cat": category, "lat": latitude, "long": longitude, "img": image_name,"tv":traffic_value,"rtime":reg_time,"near":nearest5})
     get_db().commit()
     for row in cur.execute('SELECT * FROM complaints'):
         print(row)
@@ -196,7 +202,7 @@ def getcomplaints():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if(session is not {}):
-        redirect(url_for('/pending'))
+        redirect(url_for('pending'))
     if request.method == 'POST':
         username = request.form['username']
         print(username)
@@ -240,7 +246,7 @@ def pending():
     office_id = 1 ## just for testing
     cur = get_db().cursor()
     cur.execute(
-        "select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
+        "select complaint_id,nearest5 from complaints WHERE office_assigned is NULL")
     rows = cur.fetchall()
     if len(rows) > 0:
         complaint_list = []
@@ -274,7 +280,7 @@ def owned():
     # print(office_id)
     office_id = 1
     cur = get_db().cursor()
-    cur.execute("select * from complaints WHERE owner_id = "+str(office_id) + " AND is_solved is NULL order by traffic_value desc,upvotes desc" ) 
+    cur.execute("select * from complaints WHERE office_assigned = "+str(office_id) + " AND is_solved is NULL order by traffic_value desc,upvotes desc" ) 
     rows = cur.fetchall()
     if(len(rows) > 0):
         return render_template("admin.html", isPending=False , data = rows)
@@ -286,14 +292,14 @@ def owned():
 @app.route('/accept/<complaint_id>')
 def accept(complaint_id):
     
-    owner_id=1   #session['office_id'] todo: change it back
+    office_assigned=1   #session['office_id'] todo: change it back
     office_assigned=1
     accept_time = datetime.datetime.now()
     # expected_time=10000 to be calculated
     cur=get_db().cursor()
-    cur.execute('''UPDATE complaints SET owner_id = :owner_id,office_assigned = :office_assigned ,accept_time = :accept_time
+    cur.execute('''UPDATE complaints SET office_assigned = :office_assigned ,accept_time = :accept_time
                                       WHERE complaint_id = :complaint_id ''',
-                    {"owner_id": owner_id, "office_assigned": office_assigned, "accept_time": accept_time,"complaint_id":complaint_id})
+                    {"office_assigned": office_assigned, "accept_time": accept_time,"complaint_id":complaint_id})
     
     get_db().commit()
     
@@ -343,10 +349,10 @@ def get_stats():
     office_id=1 #session['office_id'] todo: to change this
     
     cur=get_db().cursor()
-    cur.execute('SELECT * FROM complaints WHERE owner_id= 1 and is_solved is NULL')
+    cur.execute('SELECT * FROM complaints WHERE office_assigned= 1 and is_solved is NULL')
     rows_unsolved=cur.fetchall()
     unsolved_complaints=len(rows_unsolved)
-    cur.execute('SELECT * FROM complaints WHERE owner_id= 1 and is_solved is 1')
+    cur.execute('SELECT * FROM complaints WHERE office_assigned= 1 and is_solved is 1')
     rows_solved=cur.fetchall()
     total_complaints=len(rows_solved)+len(rows_unsolved)
     solved_complaints=len(rows_solved)
