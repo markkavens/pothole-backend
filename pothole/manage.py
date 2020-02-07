@@ -3,13 +3,14 @@ import sqlite3
 import requests
 import hashlib
 import math
-import datetime
+import datetime, time
+from operator import itemgetter 
 
 import os
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-DATABASE = './potholedb.db'
+DATABASE = '/home/siram/Downloads/pothole-backend/pothole/potholedb.db'
 
 def session_checking():
     if(session == {}):
@@ -69,7 +70,7 @@ def home():
 @app.route('/admin-interface')
 def adminInterface():
     print(session)
-    return render_template('admin.html', username =  session['username'])
+    return render_template('admin.html', username = "NIKHIL" ) #session['username'] should be changed to this
 
 
 @app.route('/post-complaints', methods=['POST'])
@@ -174,10 +175,14 @@ def getcomplaints():
     else:
         response = { "status":0 }
     return response
+
+
 ########################### office side #################################
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if(session is not {}):
+        redirect(url_for('/pending'))
     if request.method == 'POST':
         username = request.form['username']
         print(username)
@@ -218,7 +223,7 @@ def pending():
     '''if session  == {}:
         return redirect(url_for('login'))
     office_id = session['office_id'] '''
-    office_id = 2 ## just for testing
+    office_id = 1 ## just for testing
     cur = get_db().cursor()
     cur.execute(
         "select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
@@ -234,8 +239,11 @@ def pending():
             if str(office_id) in ids:
                 complaint_list.append(row['complaint_id'])
 
-        print(complaint_list)
-        cur.execute("select * from complaints where complaint_id in " + str((tuple(complaint_list))) )
+        print("complaint_list",complaint_list)
+        if(len(complaint_list)>1):
+            cur.execute("select * from complaints where complaint_id in "+ str(tuple(complaint_list))     )
+        else:
+            cur.execute("select * from complaints where complaint_id= "+ str(complaint_list[0])    )
         rows_p = cur.fetchall()
         return render_template('admin.html',isPending = True,data=rows_p)
 
@@ -252,7 +260,7 @@ def owned():
     # print(office_id)
     office_id = 1
     cur = get_db().cursor()
-    cur.execute("select * from complaints WHERE owner_id = "+str(office_id)) #orderby ??
+    cur.execute("select * from complaints WHERE owner_id = "+str(office_id) + " AND is_solved is NULL order by traffic_value desc,upvotes desc" ) 
     rows = cur.fetchall()
     if(len(rows) > 0):
         return render_template("admin.html", isPending=False , data = rows)
@@ -264,7 +272,7 @@ def owned():
 @app.route('/accept/<complaint_id>')
 def accept(complaint_id):
     
-    owner_id=session['office_id']
+    owner_id=1   #session['office_id'] todo: change it back
     office_assigned=1
     accept_time = datetime.datetime.now()
     # expected_time=10000 to be calculated
@@ -279,7 +287,7 @@ def accept(complaint_id):
 
 @app.route('/reject/<complaint_id>')
 def reject(complaint_id):
-    office_id=session['office_id']
+    office_id=1    #session['office_id']   todo: change it back
     cur=get_db().cursor()
     cur.execute("SELECT nearest5 FROM complaints WHERE complaint_id= ?", complaint_id)
     rows=cur.fetchall()
@@ -301,18 +309,66 @@ def reject(complaint_id):
 @app.route('/resolve/<complaint_id>')
 def resolve(complaint_id):
     
-    solver_id=session['officer_id']
+    solver_id= 1 #session['officer_id'] todo: change it back
     solved_time=datetime.datetime.now()
     is_solved=1
     
     cur=get_db().cursor()
     
     cur.execute('UPDATE complaints  SET solver_id= :solver_id,solved_time= :solved_time,is_solved= :is_solved WHERE complaint_id= :complaint_id'
-                ,{'solver_id':solver_id,'solved_time':solved_time,'is_solved':is_solved})
+                ,{'solver_id':solver_id,'solved_time':solved_time,'is_solved':is_solved,'complaint_id':complaint_id})
     
     get_db().commit()
     
-    return redirect(url_for('owned'))    
+    return redirect(url_for('owned'))  
+
+################################################################ statistics ####################################################
+
+@app.route('/get_stats')  
+def get_stats():
+    office_id=1 #session['office_id'] todo: to change this
     
+    cur=get_db().cursor()
+    cur.execute('SELECT * FROM complaints WHERE owner_id= 1 and is_solved is NULL')
+    rows_unsolved=cur.fetchall()
+    unsolved_complaints=len(rows_unsolved)
+    cur.execute('SELECT * FROM complaints WHERE owner_id= 1 and is_solved is 1')
+    rows_solved=cur.fetchall()
+    total_complaints=len(rows_solved)+len(rows_unsolved)
+    solved_complaints=len(rows_solved)
+    unsolved_complaints=len(rows_unsolved)
+    rows_solved=sorted(rows_solved,key=itemgetter('complaint_id'))
+    #todo: ETS
+    # ETS=0
+    # nof_comp_for_ets=5
+    # for i in  range(nof_comp_for_ets):
+    #     ETS+=rows[i]['solved_time']-rows[i]['registration_time']
+    # ETS/=nof_comp_for_ets
+    if(total_complaints>0):
+            
+        employee_solved={}
+        for i in range(len(rows_solved)):
+            if(rows_solved[i]['solver_id'] in employee_solved.keys()):
+                employee_solved[rows_solved[i]['solver_id']]+=1 
+            else:
+                employee_solved[rows_solved[i]['solver_id']]=1
+        final_stats={}
+        final_stats['total_complaints']=total_complaints
+        final_stats['solved_complaints']=solved_complaints
+        final_stats['unsolved_complaints']=unsolved_complaints
+        final_stats['employee_solved']=employee_solved
+        print("final",final_stats)            
+    return jsonify(final_stats)
+
+@app.route('/stats')
+def stats():
+    # if(session_checking()):
+        return render_template('statistics.html')
+     
+    
+    
+    
+        
+        
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)
