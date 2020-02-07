@@ -179,7 +179,7 @@ def login():
 
 @app.route('/logout')
 def logout():
-    for i in range(len(sessions)):
+    for i in range(len(session)):
         session.pop()
         
     return redirect('/')
@@ -187,9 +187,8 @@ def logout():
 @app.route('/pending', methods=['GET', 'POST'])
 def pending():
     #session checking
-    if(session['username'] == None):
-    
-        return redirect('\login')
+    if session  == {}:
+        return redirect(url_for('login'))
     office_id = session['office_id'] 
     cur = get_db().cursor()
     cur.execute("select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
@@ -216,7 +215,7 @@ def pending():
 def owned():
 	#session checking
     if(len(session) == 0):
-        return redirect('\login')
+        return redirect(url_for('login'))
     office_id = session['office_id']
     print(office_id)
     cur = get_db().cursor()
@@ -227,16 +226,6 @@ def owned():
 
     return "NO COMPLAINTS" ## to do render_template
 
-
- 
-
-        print(complaint_list)
-        cur.execute("select * from complaints where complaint_id in " +
-                    str((tuple(complaint_list))))
-        rows_p = cur.fetchall()
-        return jsonify(rows_p)
-
-    return "NO COMPLAINTS"  # to do render_template
 
 
 if __name__ == '__main__':
