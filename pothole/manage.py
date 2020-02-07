@@ -153,12 +153,14 @@ def getcomplaints():
     cur.execute("select * from complaints")
     rows = cur.fetchall()
     if len(rows) > 0:
+        for row in rows:
+            if row['image_name'] is not None:
+                row['img_url'] = request.url_root + "uploaded/"+row['image_name']
         rows.insert(0, {'status': 1})
         response = jsonify(rows)
     else:
         response = { "status":0 }
     return response
-
 ########################### office side #################################
 
 @app.route('/login', methods=['GET', 'POST'])
