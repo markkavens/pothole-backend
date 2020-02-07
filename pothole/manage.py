@@ -212,7 +212,7 @@ def pending():
             if row['nearest5'] is None:
                 continue
             nearest = row['nearest5']
-            ids = [1,2,3,4,5] # nearest.split(",")
+            ids = nearest.split(",")
             print(ids)
             if str(office_id) in ids:
                 complaint_list.append(row['complaint_id'])
@@ -235,10 +235,11 @@ def ownedComplaints():
 @app.route('/owned', methods=['GET', 'POST'])
 def owned():
         # session checking
-    if(len(session) == 0):
-        return redirect(url_for('login'))
-    office_id = session['office_id']
-    print(office_id)
+    # if(len(session) == 0):
+    #     return redirect(url_for('login'))
+    # office_id = session['office_id']
+    # print(office_id)
+    office_id = 1
     cur = get_db().cursor()
     cur.execute("select * from complaints WHERE owner_id = "+str(office_id)) #orderby ??
     rows = cur.fetchall()
