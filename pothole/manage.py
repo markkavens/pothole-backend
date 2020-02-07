@@ -106,9 +106,9 @@ def postcomplaints():
 
     #address = data['address']
     #landmark = data['landmark']
-    # duplication checking
+    
     cur = get_db().cursor()
-    '''
+    # duplication checking
     cur.execute("select complaint_id,complaint_latitude,complaint_longitude from complaints")
     rows = cur.fetchall()
     limit = 5
@@ -122,8 +122,8 @@ def postcomplaints():
             if d <= limit:
                 cur.execute("UPDATE complaints SET upvotes=upvotes+1 where complaint_id="+ str(row['complaint_id']))
                 get_db().commit()
-                return "status duplicate"
-    '''
+                return jsonify("status":0)
+
     # nearest 5 findings
     nearest = {}
     nearestlist = []
@@ -236,7 +236,7 @@ def pending():
     office_id = 2 ## just for testing
     cur = get_db().cursor()
     cur.execute(
-        "select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
+        "select complaint_id,nearest5 from complaints WHERE office_assigned is NULL")
     rows = cur.fetchall()
     if len(rows) > 0:
         complaint_list = []
@@ -267,26 +267,25 @@ def owned():
     # print(office_id)
     office_id = 1
     cur = get_db().cursor()
-    cur.execute("select * from complaints WHERE owner_id = "+str(office_id)) #orderby ??
+    cur.execute("select * from complaints WHERE office_assigned = "+str(office_id)) #orderby ??
     rows = cur.fetchall()
     if(len(rows) > 0):
         return render_template("admin.html", isPending=False , data = rows)
 
     return "NO COMPLAINTS" ## to do render_template
 
-###################################################### accept #########################################
+######################################### accept #########################################
 
 @app.route('/accept/<complaint_id>')
 def accept(complaint_id):
-    
-    owner_id=session['office_id']
-    office_assigned=1
+    office_assigned=session['office_id']
+    #office_assigned=1
     accept_time = datetime.datetime.now()
     # expected_time=10000 to be calculated
     cur=get_db().cursor()
-    cur.execute('''UPDATE complaints SET owner_id = :owner_id,office_assigned = :office_assigned ,accept_time = :accept_time
-                                      WHERE complaint_id = :complaint_id ''',
-                    {"owner_id": owner_id, "office_assigned": office_assigned, "accept_time": accept_time,"complaint_id":complaint_id})
+    cur.execute('''UPDATE complaints SET office_assigned = :office_assigned ,accept_time = :accept_time
+                    WHERE complaint_id = :complaint_id ''',
+                    {"office_assigned": office_assigned, "accept_time": accept_time,"complaint_id":complaint_id})
     
     get_db().commit()
     
@@ -313,9 +312,10 @@ def reject(complaint_id):
     
     return redirect(url_for('pending'))
 
+
+
 @app.route('/resolve/<complaint_id>')
 def resolve(complaint_id):
-    
     solver_id=session['officer_id']
     solved_time=datetime.datetime.now()
     is_solved=1
@@ -328,15 +328,6 @@ def resolve(complaint_id):
     get_db().commit()
     
     return redirect(url_for('owned')) 
-
-@app.route('/map/<coor>')
-def mapdisplay(coor):
-    coorlist = coor.split("-")
-    lat = float(coorlist[0])
-    lon = float(coorlist[1])
-    
-
-
 
 
 if __name__ == '__main__':
