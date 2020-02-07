@@ -7,7 +7,7 @@ import datetime
 
 import os
 app = Flask(__name__)
-app.secret_key=os.urandom(24)
+app.secret_key = os.urandom(24)
 
 DATABASE = './potholedb.db'
 
@@ -40,7 +40,7 @@ def make_dicts(cursor, row):
 
 @app.route('/')
 def home():
-    return redirect(url_for('login'))
+    return redirect('/login')
 
 
 #@app.route('/register')
@@ -51,13 +51,14 @@ def registerUser():
 				    (:cat,:lat,:long,:img)''',
                 {"cat": '', "lat": latitude,
                     "long": longitude, "img": image_name
-                    }
+                 }
                 )
 
 
 @app.route('/admin-interface')
 def adminInterface():
-    return render_template('admin.html')
+    print(session)
+    return render_template('admin.html', username =  session['username'])
 
 
 @app.route('/post-complaints', methods=['POST'])
@@ -154,23 +155,23 @@ def getcomplaints():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST' :
-        username=request.form['username']
+    if request.method == 'POST':
+        username = request.form['username']
         print(username)
-        password=request.form['password']
-        h=hashlib.md5(password.encode())
-        cur=get_db().cursor()
+        password = request.form['password']
+        h = hashlib.md5(password.encode())
+        cur = get_db().cursor()
         cur.execute("SELECT * FROM employees WHERE mobile_no="+str(username))
-        rows=cur.fetchall()
+        rows = cur.fetchall()
         print(rows)
         if len(rows) > 0:
             if(rows[0]['password'] == h.hexdigest()):
-                session['username']=rows[0]['officer_name']
-                session['officer_id']=rows[0]['officer_id']
-                session['office_id']=rows[0]['office_id']
-                session['points']=rows[0]['points']
-                session['leaderboar_rank']=rows[0]['leaderboard_rank']    
-                return   redirect('/pending')
+                session['username'] = rows[0]['officer_name']
+                session['officer_id'] = rows[0]['officer_id']
+                session['office_id'] = rows[0]['office_id']
+                session['points'] = rows[0]['points']
+                session['leaderboar_rank'] = rows[0]['leaderboard_rank']
+                return redirect('/pendingcomps')
             else:
                 return render_template('login.html', login_status=0)
         else:
@@ -183,7 +184,7 @@ def login():
 def logout():
     for i in range(len(session)):
         session.pop()
-        
+
     return redirect('/')
 
 
@@ -196,9 +197,10 @@ def pending():
     office_id = session['office_id'] '''
     office_id = 1 ## just for testing
     cur = get_db().cursor()
-    cur.execute("select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
+    cur.execute(
+        "select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
     rows = cur.fetchall()
-    if len(rows) > 0 :
+    if len(rows) > 0:
         complaint_list = []
         for row in rows:
             if row['nearest5'] is None:
@@ -210,17 +212,23 @@ def pending():
                 complaint_list.append(row['complaint_id'])
 
         print(complaint_list)
-        cur.execute("select * from complaints where complaint_id in "+str((tuple(complaint_list))))
+        cur.execute("select * from complaints where complaint_id in " +
+                    str((tuple(complaint_list))))
         rows_p = cur.fetchall()
         return render_template('admin.html',data=rows_p)
 
-    return "NO COMPLAINTS" ## to do render_template
+    return "NO COMPLAINTS"  # to do render_template
 
 
+################################################ owned complaints###########################################
 
-@app.route('/owned',methods=['GET','POST'])
+@app.route('/ownedcomps')
+def ownedComplaints():
+    return render_template("admin.html", isPending=False)
+
+@app.route('/owned', methods=['GET', 'POST'])
 def owned():
-	#session checking
+        # session checking
     if(len(session) == 0):
         return redirect(url_for('login'))
     office_id = session['office_id']
@@ -228,7 +236,7 @@ def owned():
     cur = get_db().cursor()
     cur.execute("select * from complaints WHERE owner_id = "+str(office_id)) #orderby ??
     rows = cur.fetchall()
-    if(len(rows)>0):
+    if(len(rows) > 0):
         return jsonify(rows)
 
     return "NO COMPLAINTS" ## to do render_template
