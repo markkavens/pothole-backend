@@ -23,16 +23,16 @@
 
     <nav>
         <div class="nav-wrapper deep-purple darken-4">
-          <a href="#" class="brand-logo">PWD Employee</a>
-          <ul id="nav-mobile" class="right hide-on-med-and-down">
-            <li>Welcome {{ username }}</li>
-            <li><a href="/">Home</a></li>
-            <li><a href="/owned">Owned Complaints</a></li>
-            <li><a href="/pending">Pending Complaints</a></li>
-            <li><a href="/logout">Logout</a></li>
-          </ul>
+            <a href="#" class="brand-logo">PWD Employee</a>
+            <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li>Welcome {{ username }}</li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/owned">Owned Complaints</a></li>
+                <li><a href="/pending">Pending Complaints</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
         </div>
-      </nav>
+    </nav>
 
     <div>
         <div class="container" style="width: 85%;">
@@ -50,16 +50,19 @@
                             </div>
                             <p>Date: {{ x['registration_time'] }}
                                 <br>
-                                 Category: {{ x['complaint_category'] }}
-                                 <br>
-                                 Location: {{ x['complaint_latitude'] , x['complaint_longitude']}}
+                                Category: {{ x['complaint_category'] }}
+                                <br>
+                                Location: {{ x['complaint_latitude'] , x['complaint_longitude']}}
                             </p>
 
                         </div>
                         <div class="card-action">
-                            <a class="waves-effect waves-light btn deep-purple darken-4" href="#">Show Map</a>
-                            <a class="waves-effect waves-light btn deep-purple darken-4" href={{'/accept/'~x['complaint_id']|string  }}>Accept</a>
-                            <a class="waves-effect waves-light btn deep-purple darken-4" href={{'/reject/'~x['complaint_id']|string   }}>Reject</a>
+                            <a class="waves-effect waves-light btn deep-purple darken-4" 
+                                onclick="coor({{ x['complaint_latitude'] }},{{ x['complaint_longitude'] }})">Show Map</a>
+                            <a class="waves-effect waves-light btn deep-purple darken-4"
+                                href={{'/accept/'~x['complaint_id']|string  }}>Accept</a>
+                            <a class="waves-effect waves-light btn deep-purple darken-4"
+                                href={{'/reject/'~x['complaint_id']|string   }}>Reject</a>
                         </div>
                     </div>
                 </div>
@@ -74,11 +77,11 @@
                                 <img class="pothole-img"
                                     src="https://media.istockphoto.com/photos/old-highway-with-holes-and-snow-landscape-road-potholes-in-cloudy-picture-id929942316?k=6&m=929942316&s=612x612&w=0&h=FzPRKlHamWbcShYhznEv0Z4iUht4StKkoPRb0hNIFag=">
                             </div>
-                            <p>Date: 
+                            <p>Date:
                                 <br>
-                                 Category: 
-                                 <br>
-                                 Location:
+                                Category:
+                                <br>
+                                Location:
                             </p>
 
                         </div>
@@ -100,6 +103,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 <script>
     M.AutoInit();
+</script>
+<script>
+    function coor(lat, lon) {
+        var url = `https://www.google.com/maps/@${lat},${lon},15z?hl=en`
+        window.open(url)
+    }
 </script>
 
 </html>

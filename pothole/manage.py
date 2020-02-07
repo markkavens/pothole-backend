@@ -174,6 +174,7 @@ def getcomplaints():
     else:
         response = { "status":0 }
     return response
+
 ########################### office side #################################
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -312,7 +313,17 @@ def resolve(complaint_id):
     
     get_db().commit()
     
-    return redirect(url_for('owned'))    
+    return redirect(url_for('owned')) 
+
+@app.route('/map/<coor>')
+def mapdisplay(coor):
+    coorlist = coor.split("-")
+    lat = float(coorlist[0])
+    lon = float(coorlist[1])
     
+
+
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)
