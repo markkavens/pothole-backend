@@ -70,6 +70,12 @@ def postcomplaints():
     latitude = data['latitude']
     longitude = data['longitude']
     image_name = data['image_name']
+    
+    if 'image' in request.files:
+    # print("Files are: " , len(request.files))
+        img = request.files['image']
+        img.save("uploaded/pothole.jpeg")
+
     #address = data['address']
     #landmark = data['landmark']
     # duplication checking
@@ -167,7 +173,7 @@ def login():
                 session['office_id'] = rows[0]['office_id']
                 session['points'] = rows[0]['points']
                 session['leaderboar_rank'] = rows[0]['leaderboard_rank']
-                return redirect('/pendingcomps')
+                return redirect('/pending')
             else:
                 return render_template('login.html', login_status=0)
         else:
@@ -199,7 +205,7 @@ def pending():
         complaint_list = []
         for row in rows:
             nearest = row['nearest5']
-            ids = nearest.split(",")
+            ids = [1,2,3,4,5] # nearest.split(",")
             print(ids)
             if str(office_id) in ids:
                 complaint_list.append(row['complaint_id'])
@@ -208,7 +214,8 @@ def pending():
         cur.execute("select * from complaints where complaint_id in " +
                     str((tuple(complaint_list))))
         rows_p = cur.fetchall()
-        return jsonify(rows_p)
+        return render_template("admin.html", isPending = True, data = [1,23])
+        # return jsonify(rows_p)
 
     return "NO COMPLAINTS"  # to do render_template
 
@@ -230,7 +237,8 @@ def owned():
     cur.execute("select * from complaints WHERE owner_id = "+str(office_id)) #orderby ??
     rows = cur.fetchall()
     if(len(rows) > 0):
-        return jsonify(rows)
+        return render_template("admin.html", isPending=False , data = rows)
+        # return jsonify(rows)
 
     return "NO COMPLAINTS" ## to do render_template
 
