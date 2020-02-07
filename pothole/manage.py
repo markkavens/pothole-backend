@@ -358,20 +358,21 @@ def get_stats():
     # for i in  range(nof_comp_for_ets):
     #     ETS+=rows[i]['solved_time']-rows[i]['registration_time']
     # ETS/=nof_comp_for_ets
-    if(total_complaints>0):
+    # if(total_complaints>0):
             
-        employee_solved={}
-        for i in range(len(rows_solved)):
-            if(rows_solved[i]['solver_id'] in employee_solved.keys()):
-                employee_solved[rows_solved[i]['solver_id']]+=1 
-            else:
-                employee_solved[rows_solved[i]['solver_id']]=1
-        final_stats={}
-        final_stats['total_complaints']=total_complaints
-        final_stats['solved_complaints']=solved_complaints
-        final_stats['unsolved_complaints']=unsolved_complaints
-        final_stats['employee_solved']=employee_solved
-        print("final",final_stats)            
+    employee_solved={}
+    for i in range(len(rows_solved)):
+        if(rows_solved[i]['solver_id'] in employee_solved.keys()):
+            employee_solved[rows_solved[i]['solver_id']]+=1 
+        else:
+            employee_solved[rows_solved[i]['solver_id']]=1
+    final_stats={}
+    final_stats['total_complaints']=total_complaints
+    final_stats['solved_complaints']=solved_complaints
+    final_stats['unsolved_complaints']=unsolved_complaints
+    final_stats['employee_solved']=employee_solved
+    print("final",final_stats)  
+                
     return jsonify(final_stats)
 
 @app.route('/stats')

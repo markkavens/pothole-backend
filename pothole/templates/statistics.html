@@ -1,6 +1,9 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+
+	<!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 <script>
 	function loadDoc() {
 		var xhttp = new XMLHttpRequest();
@@ -26,11 +29,11 @@ window.onload =function() {
 	  if (this.readyState == 4 && this.status == 200) {
 		console.log(this.responseText);
 		var stats=JSON.parse(this.responseText);
-		var total_complaints = stats.total_complaints
-		var solved_complaints=stats.solved_complaints
-		var unsolved_comlaints=stats.unsolved_comlaints
-		var employee_solved=stats.employee_solved
-		display_stats(total_complaints,solved_complaints,unsolved_comlaints,employee_solved)
+		var total_complaints = stats.total_complaints;
+		var solved_complaints=stats.solved_complaints;
+		var unsolved_comlaints=stats.unsolved_complaints;
+		var employee_solved=stats.employee_solved;
+		display_stats(total_complaints,solved_complaints,unsolved_comlaints,employee_solved);
 
 	  }
 	};
@@ -41,31 +44,37 @@ window.onload =function() {
 
 
 function display_stats(total_complaints,solved_complaints,unsolved_comlaints,employee_solved) {
-
+console.log(unsolved_comlaints);
 var chart = new CanvasJS.Chart("chartContainer", {
-	theme: "light2", // "light1", "light2", "dark1", "dark2"
-	exportEnabled: true,
-	animationEnabled: true,
-	title: {
-		text: "status of complaints"
+	theme: "light1", // "light2", "dark1", "dark2"
+	animationEnabled: false, // change to true		
+	title:{
+		text: "Number of solved complaints(employee wise)"
 	},
-	data: [{
+	data: [
+	{
+		// Change type to "bar", "area", "spline", "pie",etc.
 		type: "pie",
-		startAngle: 25,
-		toolTipContent: "<b>{label}</b>: {y}%",
-		showInLegend: "true",
-		legendText: "{label}",
-		indexLabelFontSize: 16,
-		indexLabel: "{label} - {y}%",
 		dataPoints: [
 			{ y: total_complaints, label: "total complaints" },
 			{ y: solved_complaints, label: "solved" },
 			{ y: unsolved_comlaints, label: "unsolved" }
-			
 		]
-	}]
+	}
+	]
 });
 chart.render();
+
+
+
+let dataPoints_1 = [];
+for(var key in employee_solved){
+
+	if (employee_solved.hasOwnProperty(key)) {           
+        dataPoints_1.push({label: key, y: employee_solved[key] });
+    }
+}
+
 
 var chart1 = new CanvasJS.Chart("chartContainer1", {
 	theme: "light1", // "light2", "dark1", "dark2"
@@ -88,9 +97,29 @@ chart1.render();
 </script>
 </head>
 <body>
-<h1>HELLO</h1>
+
+	<nav>
+        <div class="nav-wrapper deep-purple darken-4">
+          <a href="#" class="brand-logo">PWD Employee</a>
+          <ul id="nav-mobile" class="right hide-on-med-and-down">
+            <li>Welcome {{ username }}</li>
+            <li><a href="/owned">Owned Complaints</a></li>
+            <li><a href="/pending">Pending Complaints</a></li>
+            <li><a href="/logout">Logout</a></li>
+          </ul>
+        </div>
+      </nav>
+
+
 <div id="chartContainer" style="height: 370px; width: 100%;"></div>
 <div id="chartContainer1" style="height: 370px; width: 100%;"></div>
 <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script>
+    M.AutoInit();
+</script>
+
+
 </body>
 </html>
