@@ -184,7 +184,7 @@ def postcomplaints():
             if d <= limit:
                 cur.execute("UPDATE complaints SET upvotes=upvotes+1 where complaint_id="+ str(row['complaint_id']))
                 get_db().commit()
-                return jsonify({"status" : 0})
+                return jsonify({"status" : 1})
 
     # nearest 5 findings
     nearest = {}
