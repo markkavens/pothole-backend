@@ -31,7 +31,7 @@ def get_db():
 ### to be checked..
 def distance(lat1, lat2, lon1, lon2):
     r = 6378100
-    print(type(lat1))
+    # print(type(lat1))
     lat1=lat1*(math.pi/180)
     lat2=lat2*(math.pi/180)
     lon1=lon1*(math.pi/180)
@@ -84,7 +84,7 @@ def apitest():
 def getclosestpoints(lat,long):
     api_key = "jqaiP21S534IESqdD667p0Aiheea7gpt"
     # Just testing out
-    # URL="http://localhost:5500/maps-server"
+    #URL="http://localhost:5500/maps-server"
     URL = "https://roads.googleapis.com/v1/nearestRoads?point=" + \
         str(lat)+"%2C"+str(long)+"&key="+api_key
     r = requests.get(url=URL)
@@ -102,7 +102,7 @@ def getclosestpoints(lat,long):
 def verifyonroad(lat,long):
     lat2,long2=getclosestpoints(lat,long)
     d=distance(lat,lat2,long,long2)
-    print(d)
+    print("distance ",d)
     if(d>10):
         return False
     else:
@@ -145,6 +145,8 @@ def postcomplaints():
     category = data['category']
     latitude = float(data['latitude'])
     longitude = float(data['longitude'])
+    if(verifyonroad(latitude,longitude) == False):
+        return jsonify({'status':-1})
     reg_time =  datetime.datetime.now()
     image_name = str(reg_time).replace(" ","")
     
@@ -184,7 +186,7 @@ def postcomplaints():
             if d <= limit:
                 cur.execute("UPDATE complaints SET upvotes=upvotes+1 where complaint_id="+ str(row['complaint_id']))
                 get_db().commit()
-                return jsonify({"status" : 0})
+                return jsonify({"status" : 1})
 
     # nearest 5 findings
     nearest = {}
@@ -197,13 +199,13 @@ def postcomplaints():
         d = distance(latitude, lat_o, longitude, lon_o)
         nearest[row_office['office_id']] = d
     sorted_d = sorted((value, key) for (key, value) in nearest.items())
-    print(sorted_d)
+    #print(sorted_d)
     i = 0
     while i < len(sorted_d) and i < 5:
         nearestlist.append(str(sorted_d[i][1]))
         i+=1
     nearest5 = ",".join(nearestlist)
-    print(nearest5)
+    #print(nearest5)
 
     # getting traffic level of complaint point
     api_key = "jqaiP21S534IESqdD667p0Aiheea7gpt"
@@ -218,7 +220,7 @@ def postcomplaints():
         free_flow_travel_time = traffic_data['flowSegmentData']['freeFlowTravelTime']
         current_travel_time = traffic_data['flowSegmentData']['currentTravelTime']
         traffic_value = free_flow_speed-current_speed+(free_flow_travel_time-current_travel_time)/free_flow_travel_time 
-        print(traffic_value)
+        #print(traffic_value)
     else:
         traffic_value = 0
     
