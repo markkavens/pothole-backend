@@ -44,15 +44,15 @@ def home():
 
 
 #@app.route('/register')
-def registerUser():
-    cur = get_db().cursor()
-    cur.execute('''INSERT into complaints (complaint_category,complaint_latitude,
-                    complaint_longitude,image_name) VALUES
-				    (:cat,:lat,:long,:img)''',
-                {"cat": '', "lat": latitude,
-                    "long": longitude, "img": image_name
-                 }
-                )
+# def registerUser():
+#     cur = get_db().cursor()
+#     cur.execute('''INSERT into complaints (complaint_category,complaint_latitude,
+#                     complaint_longitude,image_name) VALUES
+# 				    (:cat,:lat,:long,:img)''',
+#                 {"cat": '', "lat": latitude,
+#                     "long": longitude, "img": image_name
+#                  }
+#                 )
 
 
 @app.route('/admin-interface')
@@ -72,6 +72,12 @@ def postcomplaints():
     longitude = data['longitude']
     reg_time =  datetime.datetime.now()
     image_name = data['image_name']
+    
+    if 'image' in request.files:
+    # print("Files are: " , len(request.files))
+        img = request.files['image']
+        img.save("uploaded/pothole.jpeg")
+
     #address = data['address']
     #landmark = data['landmark']
     # duplication checking
@@ -171,7 +177,7 @@ def login():
                 session['office_id'] = rows[0]['office_id']
                 session['points'] = rows[0]['points']
                 session['leaderboar_rank'] = rows[0]['leaderboard_rank']
-                return redirect('/pendingcomps')
+                return redirect('/pending')
             else:
                 return render_template('login.html', login_status=0)
         else:
@@ -215,7 +221,7 @@ def pending():
         cur.execute("select * from complaints where complaint_id in " +
                     str((tuple(complaint_list))))
         rows_p = cur.fetchall()
-        return render_template('admin.html',data=rows_p)
+        return render_template('admin.html',isPending = True,data=rows_p)
 
     return "NO COMPLAINTS"  # to do render_template
 
@@ -229,15 +235,17 @@ def ownedComplaints():
 @app.route('/owned', methods=['GET', 'POST'])
 def owned():
         # session checking
-    if(len(session) == 0):
-        return redirect(url_for('login'))
-    office_id = session['office_id']
-    print(office_id)
+    # if(len(session) == 0):
+    #     return redirect(url_for('login'))
+    # office_id = session['office_id']
+    # print(office_id)
+    office_id = 1
     cur = get_db().cursor()
     cur.execute("select * from complaints WHERE owner_id = "+str(office_id)) #orderby ??
     rows = cur.fetchall()
     if(len(rows) > 0):
-        return jsonify(rows)
+        return render_template("admin.html", isPending=False , data = rows)
+        # return jsonify(rows)
 
     return "NO COMPLAINTS" ## to do render_template
 
