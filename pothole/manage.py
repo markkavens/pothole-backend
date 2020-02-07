@@ -3,6 +3,7 @@ import sqlite3
 import requests
 import hashlib
 import math
+import datetime
 
 import os
 app = Flask(__name__)
@@ -68,6 +69,7 @@ def postcomplaints():
     category = data['category']
     latitude = data['latitude']
     longitude = data['longitude']
+    reg_time =  datetime.datetime.now()
     image_name = data['image_name']
     #address = data['address']
     #landmark = data['landmark']
@@ -123,9 +125,11 @@ def postcomplaints():
         print(traffic_value)
     else:
         traffic_value = 0
+    
+    # database posting
     cur.execute('''INSERT into complaints (complaint_category,complaint_latitude,complaint_longitude,
-                    image_name,traffic_value) VALUES(:cat,:lat,:long,:img,:tv)''',
-                    {"cat": category, "lat": latitude, "long": longitude, "img": image_name,"tv":traffic_value})
+                    image_name,traffic_value,registration_time) VALUES(:cat,:lat,:long,:img,:tv,:rtime)''',
+                    {"cat": category, "lat": latitude, "long": longitude, "img": image_name,"tv":traffic_value,"rtime":reg_time})
     get_db().commit()
     for row in cur.execute('SELECT * FROM complaints'):
         print(row)
@@ -186,16 +190,19 @@ def logout():
 
 @app.route('/pending', methods=['GET', 'POST'])
 def pending():
-    #session checking
-    if session  == {}:
+    #session checking ..commented for test
+    '''if session  == {}:
         return redirect(url_for('login'))
-    office_id = session['office_id'] 
+    office_id = session['office_id'] '''
+    office_id = 1 ## just for testing
     cur = get_db().cursor()
     cur.execute("select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
     rows = cur.fetchall()
     if len(rows) > 0 :
         complaint_list = []
         for row in rows:
+            if row['nearest5'] is None:
+                continue
             nearest = row['nearest5']
             ids = nearest.split(",")
             print(ids)
@@ -205,7 +212,7 @@ def pending():
         print(complaint_list)
         cur.execute("select * from complaints where complaint_id in "+str((tuple(complaint_list))))
         rows_p = cur.fetchall()
-        return jsonify(rows_p)
+        return render_template('admin.html',data=rows_p)
 
     return "NO COMPLAINTS" ## to do render_template
 
