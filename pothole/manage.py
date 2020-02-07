@@ -82,19 +82,22 @@ def postcomplaints():
     latitude = data['latitude']
     longitude = data['longitude']
     reg_time =  datetime.datetime.now()
-    image_name = data['image_name']
+    image_name = str(reg_time).replace(" ","")
     
     if 'image' in request.files:
     # print("Files are: " , len(request.files))
         img = request.files['image']
-        img.save("uploaded/pothole.jpeg")
+        #img.save("uploaded/pothole.jpeg")
+        img.save(os.path.join('./uploaded/', image_name))
+    #else:
+     #   return "NO image"
 
     #address = data['address']
     #landmark = data['landmark']
     # duplication checking
     cur = get_db().cursor()
-    cur.execute(
-        "select complaint_id,complaint_latitude,complaint_longitude from complaints")
+    '''
+    cur.execute("select complaint_id,complaint_latitude,complaint_longitude from complaints")
     rows = cur.fetchall()
     limit = 5
     if rows is not []:
@@ -103,11 +106,10 @@ def postcomplaints():
             lon2 = row['complaint_longitude']
             d = distance(latitude, lat2, longitude, lon2)
             if d <= limit:
-                cur.execute(
-                    "UPDATE complaints SET upvotes=upvotes+1 where complaint_id=?", str(row['complaint_id']))
+                cur.execute("UPDATE complaints SET upvotes=upvotes+1 where complaint_id="+ str(row['complaint_id']))
                 get_db().commit()
                 return "status duplicate"
-
+    '''
     # nearest 5 findings
     nearest = {}
     nearestlist = []
@@ -254,7 +256,6 @@ def owned():
     rows = cur.fetchall()
     if(len(rows) > 0):
         return render_template("admin.html", isPending=False , data = rows)
-        # return jsonify(rows)
 
     return "NO COMPLAINTS" ## to do render_template
 
