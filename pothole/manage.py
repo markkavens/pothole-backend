@@ -6,6 +6,8 @@ import math
 import datetime, time
 from operator import itemgetter 
 
+import base64
+
 import os
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -72,6 +74,11 @@ def adminInterface():
     print(session)
     return render_template('admin.html', username = "NIKHIL" ) #session['username'] should be changed to this
 
+@app.route("/api-test",methods=["POST","GET"])
+def apitest():
+    if request.method == "POST":
+        print(request.get_json())
+        return 'Hello'
 
 @app.route('/post-complaints', methods=['POST'])
 def postcomplaints():
@@ -85,13 +92,18 @@ def postcomplaints():
     reg_time =  datetime.datetime.now()
     image_name = str(reg_time).replace(" ","")
     
-    if 'image' in request.files:
-    # print("Files are: " , len(request.files))
-        img = request.files['image']
-        #img.save("uploaded/pothole.jpeg")
-        img.save(os.path.join('./uploaded/', image_name))
-    #else:
-     #   return "NO image"
+    imgdata = base64.b64decode(data['base64img'])
+    filename = 'uploaded.jpeg'  
+    with open(filename, 'wb') as f:
+        f.write(imgdata)
+
+    print(latitude, longitude)
+    
+    
+    # if 'image' in request.files:
+    # # print("Files are: " , len(request.files))
+    #     img = request.files['image']
+    #     img.save("uploaded/pothole.jpeg")
 
     #address = data['address']
     #landmark = data['landmark']
@@ -105,7 +117,9 @@ def postcomplaints():
         for row in rows:
             lat2 = row['complaint_latitude']
             lon2 = row['complaint_longitude']
+            print(lat2, lon2)
             d = distance(latitude, lat2, longitude, lon2)
+            print(d)
             if d <= limit:
                 cur.execute("UPDATE complaints SET upvotes=upvotes+1 where complaint_id="+ str(row['complaint_id']))
                 get_db().commit()
@@ -371,4 +385,4 @@ def stats():
         
         
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0", debug=True, port = 5500)
