@@ -13,7 +13,12 @@ app.secret_key = os.urandom(24)
 
 DATABASE = './potholedb.db'
 
-
+def session_checking():
+    if(session == {}):
+        return False
+    else:
+        return True
+    
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
@@ -24,8 +29,14 @@ def get_db():
 ### to be checked..
 def distance(lat1, lat2, lon1, lon2):
     r = 6378100
-    #d=2*r*math.asin((math.sqrt(math.sin((lat2-lat1)/2)))**2 + math.cos(lat1)*math.cos(lat2)*(math.sin((lon2-lon1)/2))**2)
-    return 0
+    lat1=lat1*(math.pi/180)
+    lat2=lat2*(math.pi/180)
+    lon1=lon1*(math.pi/180)
+    lon2=lon2*(math.pi/180)
+    val=math.sqrt((math.sin((lat2-lat1)/2) )**2 + math.cos(lat1)*math.cos(lat2)*(math.sin((lon2-lon1)/2) )**2 )
+    d=2*r*math.asin(val)
+    
+    return d
 
 
 @app.teardown_appcontext
@@ -78,7 +89,7 @@ def postcomplaints():
     latitude = data['latitude']
     longitude = data['longitude']
     reg_time =  datetime.datetime.now()
-    image_name = data['image_name']
+    image_name = str(reg_time).replace(" ","")
     
     imgdata = base64.b64decode(data['base64img'])
     filename = 'uploaded.jpeg'  
@@ -97,8 +108,8 @@ def postcomplaints():
     #landmark = data['landmark']
     # duplication checking
     cur = get_db().cursor()
-    cur.execute(
-        "select complaint_id,complaint_latitude,complaint_longitude from complaints")
+    '''
+    cur.execute("select complaint_id,complaint_latitude,complaint_longitude from complaints")
     rows = cur.fetchall()
     limit = 5
     if rows is not []:
@@ -109,11 +120,10 @@ def postcomplaints():
             d = distance(latitude, lat2, longitude, lon2)
             print(d)
             if d <= limit:
-                cur.execute(
-                    "UPDATE complaints SET upvotes=upvotes+1 where complaint_id=?", str(row['complaint_id']))
+                cur.execute("UPDATE complaints SET upvotes=upvotes+1 where complaint_id="+ str(row['complaint_id']))
                 get_db().commit()
                 return "status duplicate"
-
+    '''
     # nearest 5 findings
     nearest = {}
     nearestlist = []
@@ -130,7 +140,7 @@ def postcomplaints():
     while i < len(sorted_d) and i < 5:
         nearestlist.append(sorted_d[i][1])
 
-    nearest5 = "-".join(nearestlist)
+    nearest5 = ",".join(nearestlist)
     print(nearest5)
 
     # getting traffic level of complaint point
@@ -170,11 +180,15 @@ def getcomplaints():
     cur.execute("select * from complaints")
     rows = cur.fetchall()
     if len(rows) > 0:
+        for row in rows:
+            if row['image_name'] is not None:
+                row['img_url'] = request.url_root + "uploaded/"+row['image_name']
         rows.insert(0, {'status': 1})
         response = jsonify(rows)
+    else:
+        response = { "status":0 }
     return response
-
-########################################## office side ############################################
+########################### office side #################################
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -218,7 +232,7 @@ def pending():
     '''if session  == {}:
         return redirect(url_for('login'))
     office_id = session['office_id'] '''
-    office_id = 1 ## just for testing
+    office_id = 2 ## just for testing
     cur = get_db().cursor()
     cur.execute(
         "select complaint_id,nearest5 from complaints WHERE owner_id is NULL")
@@ -235,19 +249,13 @@ def pending():
                 complaint_list.append(row['complaint_id'])
 
         print(complaint_list)
-        cur.execute("select * from complaints where complaint_id in " +
-                    str((tuple(complaint_list))))
+        cur.execute("select * from complaints where complaint_id in " + str((tuple(complaint_list))) )
         rows_p = cur.fetchall()
         return render_template('admin.html',isPending = True,data=rows_p)
 
     return "NO COMPLAINTS"  # to do render_template
 
 
-################################################ owned complaints###########################################
-
-@app.route('/ownedcomps')
-def ownedComplaints():
-    return render_template("admin.html", isPending=False)
 
 @app.route('/owned', methods=['GET', 'POST'])
 def owned():
@@ -262,11 +270,63 @@ def owned():
     rows = cur.fetchall()
     if(len(rows) > 0):
         return render_template("admin.html", isPending=False , data = rows)
-        # return jsonify(rows)
 
     return "NO COMPLAINTS" ## to do render_template
 
+###################################################### accept #########################################
 
+@app.route('/accept/<complaint_id>')
+def accept(complaint_id):
+    
+    owner_id=session['office_id']
+    office_assigned=1
+    accept_time = datetime.datetime.now()
+    # expected_time=10000 to be calculated
+    cur=get_db().cursor()
+    cur.execute('''UPDATE complaints SET owner_id = :owner_id,office_assigned = :office_assigned ,accept_time = :accept_time
+                                      WHERE complaint_id = :complaint_id ''',
+                    {"owner_id": owner_id, "office_assigned": office_assigned, "accept_time": accept_time,"complaint_id":complaint_id})
+    
+    get_db().commit()
+    
+    return redirect(url_for('pending'))
 
+@app.route('/reject/<complaint_id>')
+def reject(complaint_id):
+    office_id=session['office_id']
+    cur=get_db().cursor()
+    cur.execute("SELECT nearest5 FROM complaints WHERE complaint_id= ?", complaint_id)
+    rows=cur.fetchall()
+    if(len(rows)>0):
+        nearest5=rows[0]['nearest5']
+        nearest5=nearest5.split(',')
+        print("office_id: ",str(office_id))
+        if( str(office_id) in nearest5 ):
+            nearest5.remove(str(office_id))
+        print(nearest5)
+        nearest5 = ",".join(nearest5)
+    
+    cur.execute('UPDATE complaints SET nearest5= :nearest5 WHERE complaint_id= :complaint_id',
+                {"nearest5":nearest5,"complaint_id":complaint_id})
+    get_db().commit()
+    
+    return redirect(url_for('pending'))
+
+@app.route('/resolve/<complaint_id>')
+def resolve(complaint_id):
+    
+    solver_id=session['officer_id']
+    solved_time=datetime.datetime.now()
+    is_solved=1
+    
+    cur=get_db().cursor()
+    
+    cur.execute('UPDATE complaints  SET solver_id= :solver_id,solved_time= :solved_time,is_solved= :is_solved WHERE complaint_id= :complaint_id'
+                ,{'solver_id':solver_id,'solved_time':solved_time,'is_solved':is_solved})
+    
+    get_db().commit()
+    
+    return redirect(url_for('owned'))    
+    
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port = 5500)
