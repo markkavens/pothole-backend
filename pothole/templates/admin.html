@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Pothole</title>
 
 
     <!-- Compiled and minified CSS -->
@@ -38,7 +38,7 @@
         <div class="container" style="width: 85%;">
             {{ data }}
             <div class="row">
-                {% for x in range(6)%}
+                {% for x in data %}
 
                 {% if isPending %}
                 <div class="col s12 m4">
@@ -49,11 +49,11 @@
                                 <img class="pothole-img"
                                     src="https://media.istockphoto.com/photos/old-highway-with-holes-and-snow-landscape-road-potholes-in-cloudy-picture-id929942316?k=6&m=929942316&s=612x612&w=0&h=FzPRKlHamWbcShYhznEv0Z4iUht4StKkoPRb0hNIFag=">
                             </div>
-                            <p>Date: 
+                            <p>Date: {{ x['registration_time'] }}
                                 <br>
-                                 Category: 
+                                 Category: {{ x['complaint_category'] }}
                                  <br>
-                                 Location:
+                                 Location: {{ x['complaint_latitude'] , x['complaint_longitude']}}
                             </p>
 
                         </div>
