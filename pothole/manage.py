@@ -6,13 +6,14 @@ import math
 import datetime, time
 from operator import itemgetter 
 
+import json
 import base64
 
 import os
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-DATABASE = '/home/siram/Downloads/pothole-backend/pothole/potholedb.db'
+DATABASE = './potholedb.db'
 
 def session_checking():
     if(session == {}):
@@ -79,6 +80,60 @@ def apitest():
     if request.method == "POST":
         print(request.get_json())
         return 'Hello'
+def getclosestpoints(lat,long):
+    api_key = "jqaiP21S534IESqdD667p0Aiheea7gpt"
+    # Just testing out
+    # URL="http://localhost:5500/maps-server"
+    URL = "https://roads.googleapis.com/v1/nearestRoads?point=" + \
+        str(lat)+"%2C"+str(long)+"&key="+api_key
+    r = requests.get(url=URL)
+    # print(r)
+    road_data = r.json()
+    print(road_data)
+    if('snappedPoints' in road_data.keys()):
+        latt=road_data['snappedPoints'][0]['location']['latitude'];
+        longg=road_data['snappedPoints'][0]['location']['longitude'];
+    else:
+        latt=lat
+        longg=long
+    return (latt,longg)
+
+def verifyonroad(lat,long):
+    lat2,long2=getclosestpoints(lat,long)
+    d=distance(lat,lat2,long,long2)
+    print(d)
+    if(d>10):
+        return False
+    else:
+        return True
+
+@app.route('/maps-server')
+def mapSim():
+    obj=json.loads('''{"snappedPoints": [{"location": {"latitude": 60.170877918672588,
+        "longitude": 24.942699821922421
+      },
+      "originalIndex": 0,
+      "placeId": "ChIJNX9BrM0LkkYRIM-cQg265e8"
+    },
+    {
+      "location": {
+        "latitude": 60.170876898776406,
+        "longitude": 24.942699912064771
+      },
+      "originalIndex": 1,
+      "placeId": "ChIJNX9BrM0LkkYRIM-cQg265e8"
+    },
+    {
+      "location": {
+        "latitude": 60.170874902634374,
+        "longitude": 24.942700088491474
+      },
+      "originalIndex": 2,
+      "placeId": "ChIJNX9BrM0LkkYRIM-cQg265e8"
+    }
+  ]
+    }''')
+    return jsonify(obj)
 
 @app.route('/post-complaints', methods=['POST'])
 def postcomplaints():
@@ -89,6 +144,8 @@ def postcomplaints():
     category = data['category']
     latitude = data['latitude']
     longitude = data['longitude']
+    if(verifyonroad(latitude,longitude)==False):
+        return jsonify({"status":-1})
     reg_time =  datetime.datetime.now()
     image_name = str(reg_time).replace(" ","")
     
@@ -196,7 +253,7 @@ def getcomplaints():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if(session is not {}):
-        redirect(url_for('/pending'))
+        redirect(url_for('pending'))
     if request.method == 'POST':
         username = request.form['username']
         print(username)
