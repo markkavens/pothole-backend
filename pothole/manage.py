@@ -2,6 +2,7 @@ from flask import *
 import sqlite3
 import requests
 import hashlib
+import math
 
 import os
 app = Flask(__name__)
@@ -17,7 +18,7 @@ def get_db():
         db.row_factory = make_dicts  # make dictionary of rows
     return db
 
-
+### to be checked..
 def distance(lat1, lat2, lon1, lon2):
     r = 6378100
     #d=2*r*math.asin((math.sqrt(math.sin((lat2-lat1)/2)))**2 + math.cos(lat1)*math.cos(lat2)*(math.sin((lon2-lon1)/2))**2)
@@ -38,10 +39,10 @@ def make_dicts(cursor, row):
 
 @app.route('/')
 def home():
-    return redirect(url_for('getcomplaints'))
+    return redirect(url_for('login'))
 
 
-@app.route('/register')
+#@app.route('/register')
 def registerUser():
     cur = get_db().cursor()
     cur.execute('''INSERT into complaints (complaint_category,complaint_latitude,
@@ -62,7 +63,6 @@ def adminInterface():
 def postcomplaints():
     #token = request.form['userid']
     # if(token is not none):
-
     # values from app_interface
     data = request.get_json()  # get json from them
     category = data['category']
@@ -71,7 +71,6 @@ def postcomplaints():
     image_name = data['image_name']
     #address = data['address']
     #landmark = data['landmark']
-
     # duplication checking
     cur = get_db().cursor()
     cur.execute(
@@ -87,7 +86,7 @@ def postcomplaints():
                 cur.execute(
                     "UPDATE complaints SET upvotes=upvotes+1 where complaint_id=?", str(row['complaint_id']))
                 get_db().commit()
-                return "status 0"
+                return "status duplicate"
 
     # nearest 5 findings
     nearest = {}
@@ -98,7 +97,7 @@ def postcomplaints():
         lat_o = row_office['office_latitude']
         lon_o = row_office['office_longitude']
         d = distance(latitude, lat_o, longitude, lon_o)
-        nearest[row['office_id']] = d
+        nearest[row_office['office_id']] = d
     sorted_d = sorted((value, key) for (key, value) in nearest.items())
     print(sorted_d)
     i = 0
@@ -109,37 +108,34 @@ def postcomplaints():
     print(nearest5)
 
     # getting traffic level of complaint point
-
     api_key = "jqaiP21S534IESqdD667p0Aiheea7gpt"
     # Just testing out
-
     URL = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?point=" + \
         str(latitude)+"%2C"+str(longitude)+"&key="+api_key
     r = requests.get(url=URL)
-
     traffic_data = r.json()
-
-    free_flow_speed = traffic_data['flowSegmentData']['freeFlowSpeed']
-    current_speed = traffic_data['flowSegmentData']['currentSpeed']
-    free_flow_travel_time = traffic_data['flowSegmentData']['freeFlowTravelTime']
-    current_travel_time = traffic_data['flowSegmentData']['currentTravelTime']
-
-    traffic_value = free_flow_speed - current_speed + \
-        (free_flow_travel_time - current_travel_time)/free_flow_travel_time
-
-    cur.execute('''INSERT into complaints (complaint_category,complaint_latitude,
-                    complaint_longitude,image_name) VALUES
-				    (:cat,:lat,:long,:img)''', {"cat": category, "lat": latitude, "long": longitude, "img": image_name})
+    if traffic_data is not {} and 'httpStatusCode' not in traffic_data:
+        free_flow_speed = traffic_data['flowSegmentData']['freeFlowSpeed']
+        current_speed = traffic_data['flowSegmentData']['currentSpeed']
+        free_flow_travel_time = traffic_data['flowSegmentData']['freeFlowTravelTime']
+        current_travel_time = traffic_data['flowSegmentData']['currentTravelTime']
+        traffic_value = free_flow_speed-current_speed+(free_flow_travel_time-current_travel_time)/free_flow_travel_time 
+        print(traffic_value)
+    else:
+        traffic_value = 0
+    cur.execute('''INSERT into complaints (complaint_category,complaint_latitude,complaint_longitude,
+                    image_name,traffic_value) VALUES(:cat,:lat,:long,:img,:tv)''',
+                    {"cat": category, "lat": latitude, "long": longitude, "img": image_name,"tv":traffic_value})
+    get_db().commit()
     for row in cur.execute('SELECT * FROM complaints'):
         print(row)
-    get_db().commit()
-    return "sone"
+    
+    return jsonify({"status":1})
 
 
 @app.route('/get-complaints', methods=['GET', 'POST'])
 def getcomplaints():
-
-    #token = request.form['userid']
+    #token = request.args['userid']
     # if(token is not none):
     # get from db
     cur = get_db().cursor()
@@ -150,7 +146,8 @@ def getcomplaints():
         response = jsonify(rows)
     return response
 
-########################################################################login###############################################
+########################################## office side ############################################
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST' :
@@ -177,12 +174,15 @@ def login():
     else:
         return render_template('login.html')
 
+
 @app.route('/logout')
 def logout():
     for i in range(len(session)):
         session.pop()
         
     return redirect('/')
+
+
 
 @app.route('/pending', methods=['GET', 'POST'])
 def pending():
@@ -210,7 +210,7 @@ def pending():
     return "NO COMPLAINTS" ## to do render_template
 
 
-################################################ owned complaints###########################################
+
 @app.route('/owned',methods=['GET','POST'])
 def owned():
 	#session checking
@@ -219,7 +219,7 @@ def owned():
     office_id = session['office_id']
     print(office_id)
     cur = get_db().cursor()
-    cur.execute("select * from complaints WHERE owner_id = "+str(office_id))
+    cur.execute("select * from complaints WHERE owner_id = "+str(office_id)) #orderby ??
     rows = cur.fetchall()
     if(len(rows)>0):
         return jsonify(rows)
