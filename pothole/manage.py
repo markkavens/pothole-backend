@@ -82,15 +82,17 @@ def apitest():
         print(request.get_json())
         return 'Hello'
 def getclosestpoints(lat,long):
-    api_key = "jqaiP21S534IESqdD667p0Aiheea7gpt"
+    api_key = "AIzaSyAm5teGrou4zPSiLNR3XK-bIpDbXnCbkOU"
     # Just testing out
     #URL="http://localhost:5500/maps-server"
-    URL = "https://roads.googleapis.com/v1/nearestRoads?point=" + \
-        str(lat)+"%2C"+str(long)+"&key="+api_key
+    #URL = "https://roads.googleapis.com/v1/nearestRoads?points=" + \
+     #   str(lat)+","+str(long)+"&key="+api_key
+    print(URL)
+    
     r = requests.get(url=URL)
-    # print(r)
+    print(r.json())
     road_data = r.json()
-    print(road_data)
+    # print(road_data)
     if('snappedPoints' in road_data.keys()):
         latt=road_data['snappedPoints'][0]['location']['latitude'];
         longg=road_data['snappedPoints'][0]['location']['longitude'];
@@ -102,7 +104,7 @@ def getclosestpoints(lat,long):
 def verifyonroad(lat,long):
     lat2,long2=getclosestpoints(lat,long)
     d=distance(lat,lat2,long,long2)
-    print("distance ",d)
+    print("distance: ",d)
     if(d>10):
         return False
     else:
@@ -145,8 +147,8 @@ def postcomplaints():
     category = data['category']
     latitude = float(data['latitude'])
     longitude = float(data['longitude'])
-    if(verifyonroad(latitude,longitude) == False):
-        return jsonify({'status':-1})
+    # if(verifyonroad(latitude,longitude) == False): #tobe commented to show duplication
+        # return jsonify({'status':-1})
     reg_time =  datetime.datetime.now()
     image_name = str(reg_time).replace(" ","")
     
@@ -160,7 +162,7 @@ def postcomplaints():
     with open(filename, 'wb+') as f:
         f.write(imgdata)
     f.close()
-    print(latitude, longitude)
+    # print(latitude, longitude)
     
     
     # if 'image' in request.files:
@@ -180,9 +182,9 @@ def postcomplaints():
         for row in rows:
             lat2 = row['complaint_latitude']
             lon2 = row['complaint_longitude']
-            print(lat2, lon2)
+            # print(lat2, lon2)
             d = distance(latitude, lat2, longitude, lon2)
-            print(d)
+            # print(d)
             if d <= limit:
                 cur.execute("UPDATE complaints SET upvotes=upvotes+1 where complaint_id="+ str(row['complaint_id']))
                 get_db().commit()
@@ -199,13 +201,13 @@ def postcomplaints():
         d = distance(latitude, lat_o, longitude, lon_o)
         nearest[row_office['office_id']] = d
     sorted_d = sorted((value, key) for (key, value) in nearest.items())
-    #print(sorted_d)
+    # print(sorted_d)
     i = 0
     while i < len(sorted_d) and i < 5:
         nearestlist.append(str(sorted_d[i][1]))
         i+=1
     nearest5 = ",".join(nearestlist)
-    #print(nearest5)
+    # print("nearest5 ",nearest5)
 
     # getting traffic level of complaint point
     api_key = "jqaiP21S534IESqdD667p0Aiheea7gpt"
@@ -246,7 +248,7 @@ def getcomplaints():
     if len(rows) > 0:
         for row in rows:
             if row['image_name'] is not None:
-                row['img_url'] = request.url_root + "uploaded/"+row['image_name']
+                row['img_url'] = request.url_root + "/static/uploaded/"+row['image_name']
         rows.insert(0, {'status': 1})
         response = jsonify(rows)
     else:
@@ -262,13 +264,13 @@ def login():
         redirect(url_for('pending'))
     if request.method == 'POST':
         username = request.form['username']
-        print(username)
+        # print(username)
         password = request.form['password']
         h = hashlib.md5(password.encode())
         cur = get_db().cursor()
         cur.execute("SELECT * FROM employees WHERE mobile_no="+str(username))
         rows = cur.fetchall()
-        print(rows)
+        # print(rows)
         if len(rows) > 0:
             if(rows[0]['password'] == h.hexdigest()):
                 session['username'] = rows[0]['officer_name']
@@ -312,11 +314,11 @@ def pending():
                 continue
             nearest = row['nearest5']
             ids = nearest.split(",")
-            print(ids)
+            # print(ids)
             if str(office_id) in ids:
                 complaint_list.append(row['complaint_id'])
 
-        print("complaint_list",complaint_list)
+        # print("complaint_list",complaint_list)
         if(len(complaint_list)>1):
             cur.execute("select * from complaints where complaint_id in "+ str(tuple(complaint_list))     )
         else:
@@ -366,15 +368,15 @@ def accept(complaint_id):
 def reject(complaint_id):
     office_id=1    #session['office_id']   todo: change it back
     cur=get_db().cursor()
-    cur.execute("SELECT nearest5 FROM complaints WHERE complaint_id= ?", complaint_id)
+    cur.execute("SELECT nearest5 FROM complaints WHERE complaint_id= " + str(complaint_id))
     rows=cur.fetchall()
     if(len(rows)>0):
         nearest5=rows[0]['nearest5']
         nearest5=nearest5.split(',')
-        print("office_id: ",str(office_id))
+        # print("office_id: ",str(office_id))
         if( str(office_id) in nearest5 ):
             nearest5.remove(str(office_id))
-        print(nearest5)
+        # print(nearest5)
         nearest5 = ",".join(nearest5)
     
     cur.execute('UPDATE complaints SET nearest5= :nearest5 WHERE complaint_id= :complaint_id',
@@ -435,7 +437,7 @@ def get_stats():
     final_stats['solved_complaints']=solved_complaints
     final_stats['unsolved_complaints']=unsolved_complaints
     final_stats['employee_solved']=employee_solved
-    print("final",final_stats)  
+    # print("final",final_stats)  
                 
     return jsonify(final_stats)
 
